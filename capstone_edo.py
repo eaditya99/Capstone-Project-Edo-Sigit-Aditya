@@ -44,7 +44,7 @@ def validate_model(model):
 
 ## Year
 def validate_year(year):
-    return isinstance (year,int)
+    return isinstance(year,int)
 
 ## License Plate
 def validate_license_plate(license_plate):
@@ -142,48 +142,76 @@ def input_status():
 # Updating
 def update_data(primary_key):
     if primary_key in database:
-        print('Data found!')
-        confirm = input('Are you sure you want to update this data? (y/n): ')
-        if confirm.lower() == 'y':
-            print('Enter the new values. Leave blank if you do not want to update a specific field.')
-            new_brand = input('Enter new brand: ')
-            new_model = input('Enter new model: ')
-            new_year = input('Enter new year: ')
-            new_license_plate = input('Enter new license plate: ')
-            new_status = input_status()  # Call input_status() to get the new status
-
-            # Check if status is provided
-            if new_status == '':
-                print('Status must be provided. Update canceled.')
-                return  # Exit the function if status is not provided
-
-            # Update values if not blank
-            if new_brand:
-                database[primary_key]['brand'] = new_brand
-            if new_model:
-                database[primary_key]['model'] = new_model
-            if new_year:
-                try:
-                    database[primary_key]['year'] = int(new_year)
-                except ValueError:
-                    print('Invalid year format. Year should be a number.')
-            if new_license_plate:
-                if validate_license_plate(new_license_plate):
-                    database[primary_key]['license plate'] = new_license_plate
-                else:
-                    print('Invalid license plate format.')
-
-            # Update status
-            database[primary_key]['status'] = new_status
-
-            confirm_update = input('Do you want to proceed with the update? (y/n): ')
-            if confirm_update.lower() == 'y':
-                print('Data updated successfully.')
-            elif confirm_update.lower() == 'n':
-                print('Update canceled.')
+        existing_data = database[primary_key]
+        print('Existing Data:')
+        print("ID".ljust(5), "Brand".ljust(10), "Model".ljust(15), "Year".ljust(6), "License Plate".ljust(15), "Status")
+        print('-' * 70)
+        brand = existing_data.get('brand', '')
+        model = existing_data.get('model', '')
+        year = str(existing_data.get('year', ''))
+        license_plate = existing_data.get('license plate', '')
+        status = existing_data.get('status', '')
+        print(primary_key.ljust(5), brand.ljust(10), model.ljust(15), year.ljust(6), license_plate.ljust(15), status)
+        print('-' * 70)
+        while True:
+            confirm = input('Are you sure you want to update this data? (y/n): ').lower()
+            if confirm in ['y', 'n']:
+                break
             else:
                 print('Invalid input! Please enter either "y" or "n".')
-        elif confirm.lower() == 'n':
+
+        if confirm == 'y':
+            valid_keys = ['brand', 'model', 'year', 'license plate', 'status']
+            keys_to_update = []
+            while True:
+                print('Enter the key you want to update (brand, model, year, license plate, status):')
+                key = input().strip().lower()
+                if key in valid_keys:
+                    keys_to_update.append(key)
+                    while True:
+                        more_keys = input('Do you want to update another key? (y/n): ').lower()
+                        if more_keys in ['y', 'n']:
+                            break
+                        else:
+                            print('Invalid input! Please enter either "y" or "n".')
+                    if more_keys == 'n':
+                        break
+                else:
+                    print('Invalid key. Please enter a valid key.')
+
+            updated_data = existing_data.copy()
+
+            for key in keys_to_update:
+                if key == 'brand':
+                    input_brand()
+                    updated_data['brand'] = brand
+                elif key == 'model':
+                    input_model()
+                    updated_data['model'] = model
+                elif key == 'year':
+                    input_year()
+                    updated_data['year'] = year
+                elif key == 'license plate':
+                    input_licenseplate()
+                    updated_data['license plate'] = license_plate
+                elif key == 'status':
+                    input_status()
+                    updated_data['status'] = selected_status
+
+            while True:
+                confirm_update = input('Do you want to proceed with the update? (y/n): ').lower()
+                if confirm_update in ['y', 'n']:
+                    break
+                else:
+                    print('Invalid input! Please enter either "y" or "n".')
+
+            if confirm_update == 'y':
+                # Update the database with the modified data
+                database[primary_key] = updated_data
+                print('Data updated successfully.')
+            elif confirm_update == 'n':
+                print('Update canceled.')
+        elif confirm == 'n':
             print('Update canceled.')
     else:
         print('Data does not exist.')
@@ -315,6 +343,7 @@ def Landing_Page_Admin():
             print('Invalid Input! Please enter a number.')
             print('=' * 50, '\n')
 
+# Read menu
 def Read_Menu():
     read_option = {
         1: 'Show All',
@@ -381,10 +410,10 @@ def Create_Menu():
         2: 'Back To Main Menu'
     }
     while True:
-        header = print('#### Add Data Menu ####')
+        print('#### Add Data Menu ####')
         print('=' * 40)
-        for Keys, Values in create_option.items():
-            print(f'{Keys}.{Values}')
+        for key, value in create_option.items():
+            print(f'{key}. {value}')
         input_landing = input('Input : ')
         if input_landing.isnumeric():
             input_landing = int(input_landing)
@@ -402,29 +431,32 @@ def Create_Menu():
                             input_licenseplate()
                             input_status()
                             print('=' * 40)
-                            confirm_save = input('Do you want to save this data? (y/n): ').lower()
-                            if confirm_save == 'y':
-                                database.update({primary_key : {'brand': brand,
-                                                                'model': model,
-                                                                'year': year,
-                                                                'license plate': license_plate,
-                                                                'status': selected_status
-                                                                }
-                                                })
-                                print('Data saved.\n')
-                            elif confirm_save == 'n':
-                                print('Data not saved.\n')
-                            else:
-                                print('Invalid input! Please enter either "y" or "n".')
+                            while True:
+                                confirm_save = input('Do you want to save this data? (y/n): ').lower()
+                                if confirm_save == 'y':
+                                    database.update({primary_key: {
+                                        'brand': brand,
+                                        'model': model,
+                                        'year': year,
+                                        'license plate': license_plate,
+                                        'status': selected_status
+                                    }})
+                                    print('Data saved.\n')
+                                    break
+                                elif confirm_save == 'n':
+                                    print('Data not saved.\n')
+                                    break
+                                else:
+                                    print('Invalid input! Please enter either "y" or "n".')
                 elif input_landing == 2:
                     print('=' * 17, create_option[2], '=' * 23, '\n')
                     break
             else:
-                print('Please Select The Correct Menu !')
+                print('Please Select The Correct Menu!')
                 print('=' * 40, '\n')
         else:
-            print('Invalid Input ! Please enter a number.')
-            print('='*40, '\n')
+            print('Invalid Input! Please enter a number.')
+            print('=' * 40, '\n')
 
 # Update menu
 def Update_Menu():
@@ -462,14 +494,14 @@ def Update_Menu():
 # Delete_menu
 def Delete_Menu():
     delete_option = {
-        1 : 'Delete Data',
-        2 : 'Back To Main Menu'
+        1: 'Delete Data',
+        2: 'Back To Main Menu'
     }
     while True:
-        header = print('#### Delete Data Menu ####')
+        print('#### Delete Data Menu ####')
         print('=' * 40)
-        for Keys, Values in delete_option.items():
-            print(f'{Keys}.{Values}')
+        for key, value in delete_option.items():
+            print(f'{key}. {value}')
         input_landing = input('Input : ')
         if input_landing.isnumeric():
             input_landing = int(input_landing)
@@ -481,30 +513,32 @@ def Delete_Menu():
                     if validate_primary_key(primary_key):
                         if primary_key in database:
                             print('Data found!')
-                            confirm = input('Are you sure you want to delete this data? (y/n): ')
-                            if confirm.lower() == 'y':
-                                del database[primary_key]
-                                print('Deleting...........................')
-                                print('=' * 40)
-                                print('Data has been successfully deleted.')
-                            elif confirm.lower() == 'n':
-                                print('Deletion cancelled.\n')
-                            else:
-                                print('Invalid input! Please enter either "y" or "n".\n')
+                            while True:
+                                confirm = input('Are you sure you want to delete this data? (y/n): ').lower()
+                                if confirm == 'y':
+                                    del database[primary_key]
+                                    print('Deleting...........................')
+                                    print('=' * 40)
+                                    print('Data has been successfully deleted.\n')
+                                    break
+                                elif confirm == 'n':
+                                    print('Deletion cancelled.\n')
+                                    break
+                                else:
+                                    print('Invalid input! Please enter either "y" or "n".\n')
                         else:
                             print('Data does not exist.\n')
                     else:
                         print('Invalid primary key format. Please enter a valid primary key.\n')
-                    continue
-                    continue              
                 elif input_landing == 2:
                     print('=' * 11, delete_option[2], '=' * 14, '\n')
                     break
             else:
-                print('Please Select The Correct Menu !')
+                print('Please Select The Correct Menu!')
                 print('=' * 40, '\n')
         else:
-            print('Invalid Input ! Please enter a number.')
+            print('Invalid Input! Please enter a number.')
             print('=' * 40, '\n')
+
 
 Login()
